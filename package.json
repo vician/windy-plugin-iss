@@ -1,7 +1,7 @@
 {
-    "name": "windy-plugin-template",
-    "version": "5.0.1",
-    "description": "Template for developing Windy Plugins",
+    "name": "windy-plugin-iss-tracker",
+    "version": "0.1.1",
+    "description": "Track the International Space Station position and trajectory.",
     "main": "dist/plugin.min.js",
     "type": "module",
     "scripts": {
@@ -20,17 +20,17 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/windycom/windy-plugin-template.git"
+        "url": "https://github.com/vician/windy-plugin-iss.git"
     },
     "keywords": [
         "windy",
         "windy.com",
         "plugins"
     ],
-    "author": "Windyty, S.E.",
+    "author": "Martin Vician",
     "license": "ISC",
     "bugs": {
-        "url": "https://github.com/windycom/windy-plugin-template/issues"
+        "url": "https://github.com/vician/windy-plugin-iss/issues"
     },
     "homepage": "https://docs.windy-plugins.com/",
     "dependencies": {

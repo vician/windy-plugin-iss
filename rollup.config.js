@@ -101,7 +101,7 @@ export default {
             dedupe: ['svelte'],
         }),
         commonjs(),
-        transformCodeToESMPlugin(),
+        // transformCodeToESMPlugin(),
         process.env.SERVE !== 'false' &&
             serve({
                 contentBase: 'dist',
