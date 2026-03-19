@@ -70,7 +70,7 @@ export default {
     onwarn: () => {
         /* We disable all warning messages */
     },
-    external: id => id.startsWith('@windy/'),
+    // external: id => id.startsWith('@windy/'),
     watch: {
         include: ['src/**', 'examples/**'],
         exclude: 'node_modules/**',
@@ -79,16 +79,7 @@ export default {
     plugins: [
         rollupSvelte({
             emitCss: false,
-            preprocess: {
-                style: less({
-                    sourceMap: false,
-                    math: 'always',
-                }),
-                script: data => {
-                    const preprocessed = sveltePreprocess({ sourceMap: useSourceMaps });
-                    return preprocessed.script(data);
-                },
-            },
+            preprocess: sveltePreprocess(),
         }),
         rollupSwc({
             include: ['**/*.ts', '**/*.svelte'],
