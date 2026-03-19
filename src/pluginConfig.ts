@@ -1,16 +1,16 @@
 import type { ExternalPluginConfig } from '@windy/interfaces';
 
 const config: ExternalPluginConfig = {
-    name: 'windy-plugin-my-plugin',
+    name: 'windy-plugin-iss-tracker',
     version: '0.1.0',
-    icon: '🔌',
-    title: 'This is my first plugin',
-    description: 'This is my first plugin.',
-    author: 'John Doe (optional company name)',
-    repository: 'https://github.com/windycom/windy-plugin-template',
+    icon: '🛰️',
+    title: 'ISS Tracker',
+    description: 'Track the International Space Station position and trajectory.',
+    author: 'Martin Vician',
+    repository: 'https://github.com/vician/windy-plugin-iss',
     desktopUI: 'rhpane',
     mobileUI: 'fullscreen',
-    routerPath: '/my-plugin',
+    routerPath: '/iss-tracker',
     private: true,
 };
 
