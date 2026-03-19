@@ -70,7 +70,7 @@ export default {
     onwarn: () => {
         /* We disable all warning messages */
     },
-    // external: id => id.startsWith('@windy/'),
+    external: id => id.startsWith('@windy/'),
     watch: {
         include: ['src/**', 'examples/**'],
         exclude: 'node_modules/**',
@@ -92,7 +92,7 @@ export default {
             dedupe: ['svelte'],
         }),
         commonjs(),
-        // transformCodeToESMPlugin(),
+        transformCodeToESMPlugin(),
         process.env.SERVE !== 'false' &&
             serve({
                 contentBase: 'dist',
