@@ -27,7 +27,9 @@ const config = {
   "desktopUI": "rhpane",
   "mobileUI": "fullscreen",
   "routerPath": "/iss-tracker",
-  "private": true
+  "private": true,
+  "built": Date.now(),
+  "builtReadable": new Date().toISOString()
 };
 
 const configPath = path.join(distDir, 'plugin.json');
