@@ -17,21 +17,7 @@ jobs:
                   # Ensure plugin.json exists
                   if [ ! -f dist/plugin.json ]; then
                     echo "Creating plugin.json..."
-                    cat > dist/plugin.json << 'EOF'
-{
-  "name": "windy-plugin-iss-tracker",
-  "version": "0.1.1",
-  "icon": "🛰️",
-  "title": "ISS Tracker",
-  "description": "Track the International Space Station position and trajectory.",
-  "author": "Martin Vician",
-  "repository": "https://github.com/vician/windy-plugin-iss",
-  "desktopUI": "rhpane",
-  "mobileUI": "fullscreen",
-  "routerPath": "/iss-tracker",
-  "private": true
-}
-EOF
+                    echo '{"name":"windy-plugin-iss-tracker","version":"0.1.1","icon":"🛰️","title":"ISS Tracker","description":"Track the International Space Station position and trajectory.","author":"Martin Vician","repository":"https://github.com/vician/windy-plugin-iss","desktopUI":"rhpane","mobileUI":"fullscreen","routerPath":"/iss-tracker","private":true}' > dist/plugin.json
                   fi
             - name: Publish Plugin
               run: |
