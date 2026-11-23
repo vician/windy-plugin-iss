@@ -1,6 +1,6 @@
 {
     "name": "windy-plugin-iss-tracker",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "description": "Track the International Space Station position and trajectory.",
     "main": "dist/plugin.min.js",
     "type": "module",

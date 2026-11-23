@@ -2,7 +2,7 @@ import type { ExternalPluginConfig } from '@windy/interfaces';
 
 const config: ExternalPluginConfig = {
     name: 'windy-plugin-iss-tracker',
-    version: '0.1.2',
+    version: '0.1.3',
     icon: '🛰️',
     title: 'ISS Tracker',
     description: 'Track the International Space Station position and trajectory.',
