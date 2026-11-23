@@ -23,11 +23,21 @@
 
     <div class="iss-info">
         <p><strong>Current ISS Position:</strong></p>
-        <p>Latitude: {currentLat?.toFixed(4) ?? 'Loading...'}</p>
-        <p>Longitude: {currentLon?.toFixed(4) ?? 'Loading...'}</p>
-        <p>Altitude: {currentAlt ? `${currentAlt.toFixed(2)} km` : 'Loading...'}</p>
-        <p>Velocity: {currentVel ? `${currentVel.toFixed(2)} km/h` : 'Loading...'}</p>
+        <p>Latitude: {currentLat != null ? currentLat.toFixed(4) + '°' : 'Loading...'}</p>
+        <p>Longitude: {currentLon != null ? currentLon.toFixed(4) + '°' : 'Loading...'}</p>
+        <p>Altitude: {currentAlt != null ? `${currentAlt.toFixed(2)} km` : 'Loading...'}</p>
+        <p>Velocity: {currentVel != null ? `${currentVel.toFixed(2)} km/h` : 'Loading...'}</p>
         <p>Last Updated: {lastUpdated ?? 'Not yet'}</p>
+    </div>
+
+    <div class="actions">
+        <button
+            class="button button--variant-orange size-s"
+            on:click={ centerOnISS }
+            disabled={ currentLat == null || currentLon == null }
+        >
+            Center map on ISS
+        </button>
     </div>
 </section>
 
@@ -51,18 +61,50 @@
     let issMarker: any = null;
     let trajectoryLine: any = null;
     let intervalId: number | null = null;
+    let hasInitialCentered: boolean = false;
+
+    const centerOnISS = () => {
+        if (currentLat != null && currentLon != null && map && map.setView) {
+            map.setView([currentLat, currentLon], Math.max(map.getZoom?.() ?? 3, 3));
+        }
+    };
+
+    /**
+     * Splits coordinates into separate segments whenever crossing the International Date Line (±180°),
+     * preventing unsightly horizontal wrapping lines across the world map.
+     */
+    const segmentCoordinates = (coords: [number, number][]): [number, number][][] => {
+        if (coords.length === 0) return [];
+        const segments: [number, number][][] = [];
+        let currentSegment: [number, number][] = [coords[0]];
+
+        for (let i = 1; i < coords.length; i++) {
+            const prevLon = coords[i - 1][1];
+            const currLon = coords[i][1];
+
+            if (Math.abs(currLon - prevLon) > 180) {
+                segments.push(currentSegment);
+                currentSegment = [];
+            }
+            currentSegment.push(coords[i]);
+        }
+        if (currentSegment.length > 0) {
+            segments.push(currentSegment);
+        }
+        return segments;
+    };
 
     const fetchISSData = async () => {
         try {
             error = null;
             status = 'Fetching ISS position...';
-            
-            // Fetch current position
+
+            // 1. Fetch current position & telemetry
             const response = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
             if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
+                throw new Error(`Position API error: ${response.status}`);
             }
-            
+
             const data = await response.json();
             currentLat = data.latitude;
             currentLon = data.longitude;
@@ -70,73 +112,103 @@
             currentVel = data.velocity;
             lastUpdated = new Date().toLocaleTimeString();
 
-            // Check if map is available
             if (!map || !map.setView) {
-                error = 'Map not available yet';
                 status = 'Waiting for map...';
                 return;
             }
 
-            status = 'Updating map markers...';
+            const L = (window as any).L;
+            if (!L) {
+                throw new Error('Leaflet library is not available');
+            }
 
-            // Update marker
+            // 2. Update or create ISS marker
+            const popupContent = `
+                <div style="font-family: sans-serif; min-width: 150px;">
+                    <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">🛰️ ISS (ZARYA)</div>
+                    <div>Lat: ${currentLat.toFixed(4)}°</div>
+                    <div>Lon: ${currentLon.toFixed(4)}°</div>
+                    <div>Alt: ${currentAlt.toFixed(1)} km</div>
+                    <div>Speed: ${currentVel.toFixed(1)} km/h</div>
+                </div>
+            `;
+
             if (issMarker) {
                 issMarker.setLatLng([currentLat, currentLon]);
+                issMarker.setPopupContent(popupContent);
             } else {
-                const L = (window as any).L;
-                if (!L || !L.Marker) {
-                    throw new Error('Leaflet not available');
-                }
+                const issIcon = L.divIcon({
+                    className: 'iss-marker-container',
+                    html: '<div class="iss-marker-icon">🛰️</div>',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16],
+                    popupAnchor: [0, -16],
+                });
+
                 issMarker = new L.Marker([currentLat, currentLon], {
-                    title: 'International Space Station'
+                    icon: issIcon,
+                    title: 'International Space Station',
                 }).addTo(map);
+
+                issMarker.bindPopup(popupContent);
             }
 
-            // Fetch trajectory - simplified to just timestamps
+            // Center map on first successful load
+            if (!hasInitialCentered) {
+                centerOnISS();
+                hasInitialCentered = true;
+            }
+
+            // 3. Fetch trajectory
+            // Note: api.wheretheiss.at enforces a maximum of 10 timestamps per request.
+            // We sample 10 timestamps over ~90 minutes (an orbital period) spaced 10 minutes apart:
+            // -45m to +45m around the current time.
             status = 'Fetching trajectory...';
             const now = Math.floor(Date.now() / 1000);
-            const timestamps = [];
-            for (let i = -7200; i <= 7200; i += 600) { // every 10 minutes
+            const timestamps: number[] = [];
+            for (let i = -2700; i <= 2700; i += 600) {
                 timestamps.push(now + i);
             }
-            
-            const trajUrl = `https://api.wheretheiss.at/v1/satellites/25544/positions?timestamps=${timestamps.join(',')}`;
-            const trajResponse = await fetch(trajUrl);
-            
-            if (!trajResponse.ok) {
-                throw new Error(`Trajectory API error: ${trajResponse.status}`);
+
+            try {
+                const trajUrl = `https://api.wheretheiss.at/v1/satellites/25544/positions?timestamps=${timestamps.join(',')}`;
+                const trajResponse = await fetch(trajUrl);
+
+                if (trajResponse.ok) {
+                    const trajData = await trajResponse.json();
+
+                    if (Array.isArray(trajData)) {
+                        // Extract points and insert current live position
+                        const points: { time: number; coords: [number, number] }[] = trajData
+                            .filter((pos: any) => pos && typeof pos.latitude === 'number' && typeof pos.longitude === 'number')
+                            .map((pos: any) => ({
+                                time: pos.timestamp,
+                                coords: [pos.latitude, pos.longitude] as [number, number],
+                            }));
+
+                        points.push({ time: now, coords: [currentLat, currentLon] });
+                        points.sort((a, b) => a.time - b.time);
+
+                        const segmented = segmentCoordinates(points.map(p => p.coords));
+
+                        if (trajectoryLine) {
+                            trajectoryLine.setLatLngs(segmented);
+                        } else {
+                            trajectoryLine = new L.Polyline(segmented, {
+                                color: '#ff3838',
+                                weight: 2.5,
+                                opacity: 0.85,
+                                dashArray: '6, 6',
+                            }).addTo(map);
+                        }
+                    }
+                } else {
+                    console.warn(`Trajectory fetch failed: ${trajResponse.status}`);
+                }
+            } catch (trajErr) {
+                console.warn('Non-fatal error fetching trajectory:', trajErr);
             }
-            
-            const trajData = await trajResponse.json();
 
-            if (!Array.isArray(trajData)) {
-                throw new Error('Unexpected trajectory data format');
-            }
-
-            const positions: [number, number][] = trajData
-                .filter((pos: any) => pos && pos.latitude && pos.longitude)
-                .map((pos: any) => [pos.latitude, pos.longitude]);
-
-            if (positions.length === 0) {
-                throw new Error('No valid trajectory positions');
-            }
-
-            // Update trajectory line
-            status = 'Drawing trajectory...';
-            const L = (window as any).L;
-            
-            if (trajectoryLine) {
-                trajectoryLine.setLatLngs(positions);
-            } else {
-                trajectoryLine = new L.Polyline(positions, {
-                    color: 'red',
-                    weight: 2,
-                    opacity: 0.7
-                }).addTo(map);
-            }
-
-            // Center map on current position
-            map.setView([currentLat, currentLon], 3);
             status = 'ISS tracker active';
 
         } catch (err: any) {
@@ -146,51 +218,79 @@
         }
     };
 
-    export const onopen = (_params: unknown) => {
-        console.log('ISS Tracker plugin opened');
-        status = 'Plugin opened, fetching data...';
-        fetchISSData();
-    };
-
-    onMount(() => {
-        console.log('ISS Tracker mounted');
-        status = 'Initializing...';
-        
-        // Wait a moment for map to be ready
-        setTimeout(() => {
-            fetchISSData();
-            intervalId = window.setInterval(fetchISSData, 30000); // Update every 30 seconds
-        }, 500);
-    });
-
-    onDestroy(() => {
-        console.log('ISS Tracker destroyed');
+    const cleanup = () => {
         if (intervalId) {
             clearInterval(intervalId);
+            intervalId = null;
         }
         if (issMarker && map) {
             try {
                 map.removeLayer(issMarker);
             } catch (e) {
-                console.log('Could not remove marker:', e);
+                console.warn('Could not remove marker:', e);
             }
+            issMarker = null;
         }
         if (trajectoryLine && map) {
             try {
                 map.removeLayer(trajectoryLine);
             } catch (e) {
-                console.log('Could not remove trajectory:', e);
+                console.warn('Could not remove trajectory:', e);
             }
+            trajectoryLine = null;
         }
+    };
+
+    export const onopen = (_params: unknown) => {
+        console.log('ISS Tracker plugin opened');
+        status = 'Plugin opened, fetching data...';
+        hasInitialCentered = false;
+        fetchISSData();
+
+        if (!intervalId) {
+            intervalId = window.setInterval(fetchISSData, 30000);
+        }
+    };
+
+    export const onclose = () => {
+        console.log('ISS Tracker plugin closed');
+        cleanup();
+    };
+
+    onMount(() => {
+        console.log('ISS Tracker mounted');
+        status = 'Initializing...';
+
+        setTimeout(() => {
+            fetchISSData();
+            if (!intervalId) {
+                intervalId = window.setInterval(fetchISSData, 30000);
+            }
+        }, 500);
+    });
+
+    onDestroy(() => {
+        console.log('ISS Tracker destroyed');
+        cleanup();
     });
 </script>
 
 <style lang="less">
     .iss-info {
-        margin-top: 20px;
+        margin-top: 15px;
         p {
             margin: 8px 0;
             font-size: 14px;
+        }
+    }
+
+    .actions {
+        margin-top: 20px;
+        .button {
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            display: block;
         }
     }
 
@@ -218,6 +318,25 @@
         
         p {
             margin: 0;
+        }
+    }
+
+    :global(.iss-marker-container) {
+        background: transparent !important;
+        border: none !important;
+    }
+
+    :global(.iss-marker-icon) {
+        font-size: 26px;
+        line-height: 1;
+        text-align: center;
+        filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6));
+        cursor: pointer;
+        user-select: none;
+        transition: transform 0.15s ease-out;
+
+        &:hover {
+            transform: scale(1.3);
         }
     }
 </style>
