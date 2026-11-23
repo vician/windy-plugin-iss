@@ -1,58 +1,73 @@
-# Windy Plugin Template
+# 🛰️ Windy ISS Tracker Plugin
 
-Template for development of Windy Plugins.
+A [Windy.com](https://www.windy.com/) plugin to track the live position, orbital trajectory, and telemetry of the **International Space Station (ISS)** in real-time on top of global weather layers.
 
-**Documentation at: [https://docs.windy-plugins.com/](https://docs.windy-plugins.com/)**
+![ISS Tracker Screenshot](src/screenshot.jpg)
 
-**Documentation for the Leaflet GL library is at [https://windycom.github.io/LeafletGL/docs/](https://windycom.github.io/LeafletGL/docs/)**
+## Features
 
-## Quick start
+- 🛰️ **Live ISS Position**: Real-time marker on the Leaflet GL map showing current coordinates.
+- 🚀 **Telemetry Data**: Live altitude (km), velocity (km/h), and coordinates updated every 30 seconds via [wheretheiss.at](https://wheretheiss.at/).
+- 🌐 **Orbit Trajectory**: Projected path across the globe with antimeridian (date line) handling.
+- 🎯 **Viewport Controls**: One-click "Center map on ISS" button in the right-hand panel.
 
-- Install dependencies with `npm i`
-- Compile the plugin in watch mode with `npm start`
-- Navigate to <https://www.windy.com/developer-mode>
-- Load your plugin from the URL <https://localhost:9999/plugin.js>
-- Code away!
+---
 
-For running the examples:
+## Installation
 
-- Build the desired example in watch mode with `npm run example01` (or `example02`, etc.)
-- Load the example in Windy's developer mode using the URL <https://localhost:9999/example01/plugin.js>
+### Manual Installation (Direct CDN URL)
 
-## Known issues
+1. Open [Windy.com](https://www.windy.com/).
+2. Open the main menu in the **top right** corner (hamburger icon) and select **Install Windy plugin** (or navigate directly to [windy.com/plugins](https://www.windy.com/plugins)).
+3. Scroll down to the manual installation input field at the bottom.
+4. Paste the direct Windy CDN URL:
+   ```text
+   https://windy-plugins.com/1003211/windy-plugin-iss-tracker/0.1.3/plugin.min.js
+   ```
+5. Click **Install**.
+6. The **ISS Tracker** is now installed! You can launch it from the right-side menu or access it directly at:  
+   **[windy.com/plugin/iss-tracker](https://www.windy.com/plugin/iss-tracker)**
 
-- In *example03* the boat orientation resets after the user zooms.
-This is likely related to Leaflet GL executing `zoom` events in slightly different order.
-Markers now also internally subscribe to the map's `zoom` event to update their CSS positioning,
-which likely executes *after* the user's `zoom` event in this example.
-- In *example04* map clicks within the rendered cycle do not fire the `singleclick` event, as they have before Leaflet LG.
+---
 
-## CHANGELOG
+## Local Development
 
--   5.0.0
-    -   Updated example code for the new Leaflet GL map library introduced in client v49.0.0
--   4.2.2
-    -   New plugins are marked as private by default
--   4.2.1
-    -   Updated `@windycom/plugin-devtools` for client v46.1.0
--   4.2.0
-    -   Fixed compiler sourcemap error
--   4.1.0
-    -   Updated plugin upload URL
--   4.0.0
-    -   Updated `@windycom/plugin-devtools` for client v45.0.0
--   3.0.0
-    -   Updated `@windycom/plugin-devtools` for client v42.2.0
--   2.0.0
-    -   Completely new version of the plugin system based in Windy client v42+
--   1.0.0
-    -   New rollup compiler, no more riot architecture
-    -   Updated examples for Windy client v39
--   0.4.0
-    -   Added `plugin-data-loader` to the Plugins API
--   0.3.0
-    -   Examples moved to examples dir
--   0.2.0
-    -   Fixed wrong examples
--   0.1.1
-    -   Initial version of this repo
+If you want to run or test the plugin locally:
+
+1. Clone and install dependencies:
+   ```bash
+   git clone https://github.com/vician/windy-plugin-iss.git
+   cd windy-plugin-iss
+   npm install
+   ```
+2. Start the development server in watch mode:
+   ```bash
+   npm start
+   ```
+3. Open [windy.com/developer-mode](https://www.windy.com/developer-mode).
+4. Load the local plugin from:
+   ```text
+   https://localhost:9999/plugin.js
+   ```
+
+---
+
+## Releasing a New Version
+
+Version bumps and synchronization are handled automatically:
+
+```bash
+# 1. Bump version and sync src/pluginConfig.ts
+npm version patch   # or minor / major
+
+# 2. Push commit and tag to GitHub
+git push --follow-tags
+```
+
+The GitHub Actions workflow will automatically build, package, and upload the new version to Windy.
+
+---
+
+## License
+
+ISC License - see [package.json](package.json).
