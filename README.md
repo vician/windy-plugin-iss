@@ -2,7 +2,7 @@
 
 A [Windy.com](https://www.windy.com/) plugin to track the live position, orbital trajectory, and telemetry of the **International Space Station (ISS)** in real-time on top of global weather layers.
 
-![ISS Tracker Screenshot](src/screenshot.jpg)
+![ISS Tracker Screenshot](./preview.png)
 
 ## Features
 
