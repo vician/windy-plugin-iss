@@ -82,6 +82,9 @@ The GitHub Actions workflow will automatically build, package, and upload the ne
 
 ## Roadmap / TODO
 
+- [ ] **Smooth Curved Orbital Trajectory**:
+  - The current trajectory line connects only 10 discrete timestamps (the API limit) spaced 10 minutes apart (~4,500 km between points), making the orbit look like segmented straight lines with sharp bends.
+  - Implement smooth curved interpolation (e.g., higher-density sampling via client-side propagation, great-circle geodesic paths, or Catmull-Rom spline interpolation) so the orbital ground track renders as a seamless, flowing sine curve across the map.
 - [ ] **Visibility Footprint Circle**:
   - Render a line-of-sight horizon circle (`L.Circle`) on the map around the ISS using the telemetry `footprint` value (~2,200 km radius). Anyone inside this circle has direct line-of-sight to the station.
 - [ ] **Solar Terminator & "Visible Pass" Calculation**:
