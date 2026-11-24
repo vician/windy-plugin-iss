@@ -68,6 +68,31 @@ The GitHub Actions workflow will automatically build, package, and upload the ne
 
 ---
 
+## Known Bugs & Issues
+
+- [ ] **[BUG] ISS position ignores Windy timeline / time shifter**:
+  - **Problem**: When scrubbing the Windy timeline slider (or clicking Play to animate the forecast), the weather shifts through time while the ISS marker remains static at the current real-world timestamp.
+  - **Potential Solutions**:
+    - **Approach A (API-based)**: Listen to `store.on('timestamp')` and query `wheretheiss.at/v1/satellites/25544/positions`. Must implement strict debouncing (~400ms), in-memory caching, and request throttling (1.1s cooldown) to avoid hitting the 1 request/second API rate limit.
+    - **Approach B (Client-side SGP4 / `satellite.js` - Recommended)**: Fetch the latest ISS TLE (Two-Line Element) from CelesTrak once and calculate the station's orbital position locally in JavaScript for any selected timestamp. Enables butter-smooth 60 FPS animation during timeline playback across the full 10-day forecast with zero network requests.
+- [ ] **[BUG / UX] Sidebar UI needs a redesign**:
+  - The current right-hand panel UI is basic and utilitarian. Needs to be rewritten with clean, modern card layouts, better typography, status badges, and styling that harmonizes natively with Windy's dark UI.
+
+---
+
+## Roadmap / TODO
+
+- [ ] **Visibility Footprint Circle**:
+  - Render a line-of-sight horizon circle (`L.Circle`) on the map around the ISS using the telemetry `footprint` value (~2,200 km radius). Anyone inside this circle has direct line-of-sight to the station.
+- [ ] **Solar Terminator & "Visible Pass" Calculation**:
+  - Add a Day/Night solar terminator shadow overlay on the map.
+  - Calculate real naked-eye visibility windows: identifying when an observer is in twilight/night (dusk/dawn, Sun elevation between -6° and -18°) while the ISS is in direct sunlight (not eclipsed by Earth's shadow).
+  - Visually highlight the intersection where the ISS footprint overlaps the twilight zone.
+- [ ] **Windy Cloud Forecast Integration**:
+  - Pair visible passes with Windy's cloud cover forecasts to answer: *"Will the sky actually be clear when the ISS flies over me tonight?"*
+
+---
+
 ## License
 
 ISC License - see [package.json](package.json).
